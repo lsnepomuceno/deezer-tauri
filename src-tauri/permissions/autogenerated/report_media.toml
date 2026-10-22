@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-report-media"
+description = "Enables the report_media command without any pre-configured scope."
+commands.allow = ["report_media"]
+
+[[permission]]
+identifier = "deny-report-media"
+description = "Denies the report_media command without any pre-configured scope."
+commands.deny = ["report_media"]

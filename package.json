@@ -1,0 +1,17 @@
+{
+  "name": "deezer-tauri",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "test:bridge": "node --test src-tauri/scripts/bridge.test.mjs",
+    "icons": "node scripts/render-icons.mjs && tauri icon icons-build/icon.png --output src-tauri/icons && node scripts/render-icons.mjs --prune"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "@tauri-apps/cli": "2.12.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

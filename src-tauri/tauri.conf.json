@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Deezer Tauri",
+  "mainBinaryName": "deezer-tauri",
+  "version": "0.1.0",
+  "identifier": "io.github.lsnepomuceno.deezertauri",
+  "build": {
+    "frontendDist": "https://www.deezer.com/"
+  },
+  "app": {
+    "windows": [],
+    "withGlobalTauri": false,
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "rpm", "appimage", "nsis", "msi", "app", "dmg"],
+    "category": "Music",
+    "shortDescription": "Unofficial desktop shell for the Deezer web player",
+    "longDescription": "Deezer Tauri opens the Deezer web player in its own window, using the operating system's web engine, and adds a tray with playback controls, track notifications, close-to-tray and a session that stays logged in. Unofficial, with no affiliation with Deezer.",
+    "copyright": "Copyright (c) 2026 Lucas Nepomuceno",
+    "license": "MIT",
+    "homepage": "https://github.com/lsnepomuceno/deezer-tauri",
+    "publisher": "Lucas Nepomuceno",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "linux": {
+      "deb": {
+        "depends": [
+          "libayatana-appindicator3-1",
+          "gstreamer1.0-plugins-good",
+          "gstreamer1.0-plugins-bad",
+          "gstreamer1.0-libav"
+        ]
+      },
+      "rpm": {
+        "depends": [
+          "libayatana-appindicator-gtk3",
+          "gstreamer1-plugins-good",
+          "gstreamer1-plugins-bad-free",
+          "gstreamer1-plugin-libav"
+        ]
+      },
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  }
+}

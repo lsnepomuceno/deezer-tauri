@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Fixture player</title>
+</head>
+<body>
+  <p>A page that uses the Media Session API the way the Deezer web player does.</p>
+  <script>
+    (function () {
+      var tracks = [
+        { title: 'Fixture Track One', artist: 'Fixture Artist', album: 'Fixture Album' },
+        { title: 'Fixture Track Two', artist: 'Fixture Artist', album: 'Fixture Album' }
+      ];
+      var session = navigator.mediaSession;
+      var index = 0;
+
+      function load(next) {
+        index = next;
+        var track = tracks[index];
+        session.metadata = new MediaMetadata({
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          artwork: [
+            { src: 'https://e2e.invalid/cover-250.jpg', sizes: '250x250', type: 'image/jpeg' },
+            { src: 'https://e2e.invalid/cover-500.jpg', sizes: '500x500', type: 'image/jpeg' }
+          ]
+        });
+        session.setActionHandler('previoustrack', index > 0 ? function () { load(index - 1); } : null);
+      }
+
+      session.playbackState = 'paused';
+      session.setActionHandler('play', function () { session.playbackState = 'playing'; });
+      session.setActionHandler('pause', function () { session.playbackState = 'paused'; });
+      session.setActionHandler('nexttrack', function () { load(Math.min(index + 1, tracks.length - 1)); });
+      load(0);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+name: Release
+
+# A tag vX.Y.Z builds the installers on every platform and attaches them to a draft
+# release, with that version's section of CHANGELOG.md as its notes (specs/features/004).
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.notes.outputs.notes }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: The tag matches the versions
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cargo_version=$(sed -n 's/^version = "\(.*\)"$/\1/p' src-tauri/Cargo.toml | head -1)
+          conf_version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "tag $version, Cargo.toml $cargo_version, tauri.conf.json $conf_version"
+          test "$version" = "$cargo_version" && test "$version" = "$conf_version"
+
+      - name: Release notes
+        id: notes
+        run: |
+          {
+            echo 'notes<<NOTES_END'
+            scripts/changelog-section.sh "$GITHUB_REF_NAME"
+            echo 'NOTES_END'
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: verify
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-22.04
+            args: ''
+          - name: Windows
+            os: windows-latest
+            args: ''
+          - name: macOS (Apple Silicon)
+            os: macos-latest
+            args: '--target aarch64-apple-darwin'
+          - name: macOS (Intel)
+            os: macos-latest
+            args: '--target x86_64-apple-darwin'
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Linux system packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev \
+            patchelf gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.args }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Node tools
+        run: npm ci
+
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tauriScript: npm run tauri
+          args: ${{ matrix.args }}
+          tagName: ${{ github.ref_name }}
+          releaseName: Deezer Tauri ${{ github.ref_name }}
+          releaseBody: ${{ needs.verify.outputs.notes }}
+          releaseDraft: true
+          prerelease: false

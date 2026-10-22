@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "deezer-remote",
+  "description": "The Deezer web player may report its media session, and nothing else (specs/features/002-media-bridge AC-9).",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["https://*.deezer.com"]
+  },
+  "permissions": ["allow-report-media"]
+}

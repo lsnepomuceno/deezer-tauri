@@ -39,4 +39,5 @@ The community ports of the Deezer desktop app for Linux repackage the Windows bu
 
 ## Open questions
 
+- AC-8 for the login providers (a Google, Facebook or Apple sign-in popup kept inside the app, sharing the session) is covered by the classification tests but was not yet exercised by hand: the first manual run on 2026-10-22 signed in with e-mail and password. AC-2, AC-3 and AC-4 were verified by hand on GNOME that day.
 - Whether Deezer's web player accepts WKWebView with the Safari user agent of AC-5 on every macOS version from 11 up. Verified only by the CI end-to-end run against the fixture page, not against Deezer, until someone runs it on a Mac.

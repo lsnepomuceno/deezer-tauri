@@ -23,7 +23,7 @@
 
 ## Why
 
-On Linux there is no official Deezer app, and the community ports repackage the Windows build on an Electron that falls years behind (the one this project replaced ran Chromium 91 from 2021). On Windows and macOS the official app is a 230 MB Electron. Deezer Tauri is a native window around the web player on the web engine your system already keeps up to date, about 10 MB to download.
+On Linux there is no official Deezer app, and the community ports repackage the Windows build on an Electron that falls years behind (the one this project replaced ran Chromium 91 from 2021). On Windows and macOS the official app is a 230 MB Electron. Deezer Tauri is a native window around the web player on the web engine your system already keeps up to date: the `.deb` and the `.rpm` are under 3 MB.
 
 ## Features
 
@@ -45,7 +45,7 @@ Download the installer for your system from the [latest release](https://github.
 | --- | --- | --- |
 | Ubuntu, Debian, Mint, Pop!_OS | `.deb` | `sudo apt install ./deezer-tauri_*_amd64.deb` installs the GStreamer plugins the player needs |
 | Fedora, openSUSE | `.rpm` | `sudo dnf install ./deezer-tauri-*.x86_64.rpm` |
-| Any Linux | `.AppImage` | `chmod +x` and run; it carries its own GStreamer |
+| Any Linux | `.AppImage` | `chmod +x` and run; about 170 MB, since it carries its own WebKitGTK and GStreamer |
 | Windows 10 and 11 | `-setup.exe` or `.msi` | Installs WebView2 if it is missing |
 | macOS 11 or later | `.dmg` | `aarch64` for Apple Silicon, `x64` for Intel |
 
@@ -70,7 +70,8 @@ You need [Rust](https://rustup.rs) (stable), Node 20 or newer, and on Linux:
 ```sh
 # Debian and Ubuntu
 sudo apt install libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev \
-  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
+  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav \
+  patchelf xvfb   # patchelf for the AppImage, xvfb to keep the end-to-end window off screen
 ```
 
 Windows needs the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and macOS the Xcode command line tools, as for any [Tauri app](https://v2.tauri.app/start/prerequisites/).

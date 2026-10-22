@@ -13,6 +13,8 @@ Tauri's bundler produces every format from `tauri.conf.json`; the Tauri CLI come
 
 Ubuntu 22.04 is the oldest runner with `libwebkit2gtk-4.1-dev`, and building there keeps the `.deb` and AppImage loadable on older glibc.
 
+The AppImage bundles GStreamer (`bundleMediaFramework`), which needs `patchelf` on the build machine; without the "bad" plugin set (the bundler's default) it played Deezer on 2026-10-22, with the playback position advancing on MPRIS.
+
 The end-to-end test needs a display on Linux: `xvfb-run -a cargo test --features e2e --test e2e`. Windows and macOS runners have a desktop session.
 
 ## Release notes

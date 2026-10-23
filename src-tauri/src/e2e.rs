@@ -88,16 +88,22 @@ fn answered(tag: &str) -> Option<serde_json::Value> {
 }
 
 /// Plays a public 30-second preview from Deezer's CDN, muted, inside the Deezer page,
-/// and reports how far it got six seconds later.
+/// and reports once it is two seconds in (or after 20 s, however far it got: a CI
+/// runner without a sound card can be slow to start).
 const PREVIEW_PROBE: &str = r#"(function () {
   var answer = function (value) { document.title = 'E2E:PREVIEW ' + JSON.stringify(value); };
   fetch('https://api.deezer.com/track/3135556').then(function (r) { return r.json(); }).then(function (track) {
     var audio = new Audio(track.preview);
     audio.muted = true;
     audio.play().catch(function (error) { answer({ error: String(error) }); });
-    setTimeout(function () {
-      answer({ time: audio.currentTime, error: audio.error && audio.error.code });
-    }, 6000);
+    var started = Date.now();
+    (function check() {
+      if (audio.currentTime >= 2 || audio.error || Date.now() - started > 20000) {
+        answer({ time: audio.currentTime, error: audio.error && audio.error.code });
+      } else {
+        setTimeout(check, 250);
+      }
+    })();
   }, function (error) { answer({ error: String(error) }); });
 })();"#;
 

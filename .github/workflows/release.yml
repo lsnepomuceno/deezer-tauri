@@ -70,11 +70,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # A slow Ubuntu mirror held this step for 30 minutes on 2026-10-23: bounded and retried.
       - name: Linux system packages
         if: runner.os == 'Linux'
+        timeout-minutes: 10
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y --no-install-recommends \
             libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev \
             patchelf gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
 

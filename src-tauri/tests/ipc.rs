@@ -10,6 +10,13 @@ use tauri::test::{get_ipc_response, mock_builder, mock_context, noop_assets, INV
 use tauri::webview::InvokeRequest;
 use tauri::{Manager, WebviewWindowBuilder};
 
+/// The app's own origin, which differs on Windows (WebView2 serves custom protocols over http).
+const LOCAL_ORIGIN: &str = if cfg!(windows) {
+    "http://tauri.localhost"
+} else {
+    "tauri://localhost"
+};
+
 fn invoke(body: Value) -> (Arc<Player>, Result<InvokeResponseBody, Value>) {
     let app = mock_builder()
         .manage(Arc::new(Player::default()))
@@ -25,7 +32,7 @@ fn invoke(body: Value) -> (Arc<Player>, Result<InvokeResponseBody, Value>) {
             cmd: "report_media".into(),
             callback: CallbackFn(0),
             error: CallbackFn(1),
-            url: "tauri://localhost".parse().unwrap(),
+            url: LOCAL_ORIGIN.parse().unwrap(),
             body: InvokeBody::Json(body),
             headers: Default::default(),
             invoke_key: INVOKE_KEY.to_string(),

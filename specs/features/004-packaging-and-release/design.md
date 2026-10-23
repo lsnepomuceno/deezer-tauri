@@ -17,6 +17,10 @@ The AppImage bundles GStreamer (`bundleMediaFramework`), which needs `patchelf` 
 
 The end-to-end test needs a display on Linux: `xvfb-run -a cargo test --features e2e --test e2e`. Windows and macOS runners have a desktop session.
 
+## Windows manifest
+
+`tauri-build` embeds the Windows application manifest (Common Controls v6) in the app binary only; a test binary that links Tauri then fails to start with `STATUS_ENTRYPOINT_NOT_FOUND` (the first CI run on 2026-10-22). `build.rs` disables Tauri's copy and embeds `src-tauri/windows-app-manifest.xml` through the linker (`/MANIFEST:EMBED`, `/MANIFESTINPUT`), which reaches the app, the tests and the examples alike.
+
 ## Release notes
 
 `scripts/changelog-section.sh vX.Y.Z` prints the section of `CHANGELOG.md` for that version; the release job passes it as the body. A tag whose section is missing fails the job.

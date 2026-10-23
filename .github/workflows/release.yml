@@ -1,7 +1,7 @@
 name: Release
 
-# A tag vX.Y.Z builds the installers on every platform and attaches them to a draft
-# release, with that version's section of CHANGELOG.md as its notes (specs/features/004).
+# A tag vX.Y.Z opens one draft release with that version's section of CHANGELOG.md as
+# its notes, and the installers of every platform are attached to it (specs/features/004).
 on:
   push:
     tags: [ 'v*.*.*' ]
@@ -12,8 +12,10 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
-      notes: ${{ steps.notes.outputs.notes }}
+      release_id: ${{ steps.draft.outputs.id }}
     steps:
       - uses: actions/checkout@v7
 
@@ -25,14 +27,21 @@ jobs:
           echo "tag $version, Cargo.toml $cargo_version, tauri.conf.json $conf_version"
           test "$version" = "$cargo_version" && test "$version" = "$conf_version"
 
-      - name: Release notes
-        id: notes
+      # One draft, created here: four build jobs looking for a release that does not
+      # exist yet each created their own, and split the installers between them.
+      - name: Draft release
+        id: draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          {
-            echo 'notes<<NOTES_END'
-            scripts/changelog-section.sh "$GITHUB_REF_NAME"
-            echo 'NOTES_END'
-          } >> "$GITHUB_OUTPUT"
+          scripts/changelog-section.sh "$GITHUB_REF_NAME" > notes.md
+          id=$(gh api "repos/$GITHUB_REPOSITORY/releases" \
+            -f tag_name="$GITHUB_REF_NAME" \
+            -f name="Deezer Tauri $GITHUB_REF_NAME" \
+            -F draft=true \
+            -F body=@notes.md \
+            --jq .id)
+          echo "id=$id" >> "$GITHUB_OUTPUT"
 
   build:
     needs: verify
@@ -61,13 +70,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # No gstreamer1.0-plugins-bad: nothing here plays audio and the AppImage bundler
+      # leaves that set out by default. Mirror fallback inside the script.
       - name: Linux system packages
         if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev \
-            patchelf gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
+        timeout-minutes: 25
+        run: scripts/ci-linux-packages.sh
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -92,8 +100,4 @@ jobs:
         with:
           tauriScript: npm run tauri
           args: ${{ matrix.args }}
-          tagName: ${{ github.ref_name }}
-          releaseName: Deezer Tauri ${{ github.ref_name }}
-          releaseBody: ${{ needs.verify.outputs.notes }}
-          releaseDraft: true
-          prerelease: false
+          releaseId: ${{ needs.verify.outputs.release_id }}

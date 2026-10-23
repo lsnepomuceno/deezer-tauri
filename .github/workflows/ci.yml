@@ -31,13 +31,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # No gstreamer1.0-plugins-bad: nothing here plays audio and the AppImage bundler
+      # leaves that set out by default. Mirror fallback inside the script.
       - name: Linux system packages
         if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev \
-            patchelf xvfb gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
+        timeout-minutes: 25
+        run: scripts/ci-linux-packages.sh xvfb
 
       - uses: dtolnay/rust-toolchain@stable
         with:

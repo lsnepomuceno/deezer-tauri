@@ -43,11 +43,11 @@ Download the installer for your system from the [latest release](https://github.
 
 | System | File | Notes |
 | --- | --- | --- |
-| Ubuntu, Debian, Mint, Pop!_OS | `.deb` | `sudo apt install ./deezer-tauri_*_amd64.deb` installs the GStreamer plugins the player needs |
-| Fedora, openSUSE | `.rpm` | `sudo dnf install ./deezer-tauri-*.x86_64.rpm` |
-| Any Linux | `.AppImage` | `chmod +x` and run; about 170 MB, since it carries its own WebKitGTK and GStreamer |
-| Windows 10 and 11 | `-setup.exe` or `.msi` | Installs WebView2 if it is missing |
-| macOS 11 or later | `.dmg` | `aarch64` for Apple Silicon, `x64` for Intel |
+| Ubuntu, Debian, Mint, Pop!_OS | `.deb` | `sudo apt install ./Deezer.Tauri_*_amd64.deb` also installs the GStreamer plugins the player needs |
+| Fedora, openSUSE | `.rpm` | `sudo dnf install ./Deezer.Tauri-*.x86_64.rpm` |
+| Any Linux | `.AppImage` | `chmod +x Deezer.Tauri_*_amd64.AppImage` and run it; about 145 MB, since it carries its own WebKitGTK and GStreamer |
+| Windows 10 and 11 | `_x64-setup.exe` or `_x64_en-US.msi` | Installs WebView2 if it is missing |
+| macOS 11 or later | `_aarch64.dmg` or `_x64.dmg` | `aarch64` for Apple Silicon, `x64` for Intel |
 
 The installers are not code-signed, so the first launch asks for confirmation:
 

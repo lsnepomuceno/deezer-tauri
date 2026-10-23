@@ -9,7 +9,7 @@ Tauri's bundler produces every format from `tauri.conf.json`; the Tauri CLI come
 | Workflow | Trigger | Jobs |
 | --- | --- | --- |
 | `ci.yml` | pull request to `main`, push to `main`, manual | `checks` matrix (Ubuntu 22.04, Windows, macOS): `make`-equivalent steps, then `tauri build` and artifact upload |
-| `release.yml` | tag `v*` | `verify` (tag against versions), `build` matrix (Ubuntu 22.04, Windows, macOS aarch64, macOS x86_64) with `tauri-apps/tauri-action`, draft release with the changelog section |
+| `release.yml` | tag `v*` | `verify` (tag against versions, then one draft release with the changelog section), `build` matrix (Ubuntu 22.04, Windows, macOS aarch64, macOS x86_64) with `tauri-apps/tauri-action` uploading to that draft by id |
 
 Ubuntu 22.04 is the oldest runner with `libwebkit2gtk-4.1-dev`, and building there keeps the `.deb` and AppImage loadable on older glibc.
 
@@ -23,7 +23,9 @@ The end-to-end test needs a display on Linux: `xvfb-run -a cargo test --features
 
 ## Release notes
 
-`scripts/changelog-section.sh vX.Y.Z` prints the section of `CHANGELOG.md` for that version; the release job passes it as the body. A tag whose section is missing fails the job.
+`scripts/changelog-section.sh vX.Y.Z` prints the section of `CHANGELOG.md` for that version, without the link reference definitions at the end of the file; the `verify` job uses it as the body of the draft. A tag whose section is missing fails the job.
+
+The draft is created once, in `verify`, and its id goes to every build job. With `tagName` instead, the four jobs of `v0.1.0` each looked for a release that did not exist yet, two created their own, and the installers were split between two drafts (merged by hand before publishing).
 
 ## Icons
 

@@ -62,7 +62,10 @@ Built only with `--features e2e`; release builds do not contain it.
 - `DEEZER_TAURI_E2E_URL` replaces the start URL and its origin is added to `Policy` as `App`; a runtime capability grants `allow-report-media` to that origin.
 - The webview is incognito, the window-state and single-instance plugins are not registered, and settings are read from `DEEZER_TAURI_E2E_SETTINGS`, so a run never touches the user's session or preferences.
 - A driver thread waits for each expected state, sends the next action, and writes a JSON report to `DEEZER_TAURI_E2E_REPORT`; the process exits 0 when every step passed and 1 on the first failure or after 60 s.
-- `tests/e2e.rs` serves `tests/fixtures/player.html` from a `TcpListener` on `127.0.0.1:0`, runs the binary (`CARGO_BIN_EXE_deezer-tauri`) and asserts on the exit status and the report.
+- `tests/e2e.rs` serves `tests/fixtures/player.html` and `popup.html` from a `TcpListener` on `127.0.0.1:0`, runs the binary (`CARGO_BIN_EXE_deezer-tauri`) and asserts on the exit status, the report and the names of the steps that must have run.
+- After the media and tray steps, the driver exercises the navigation rules of feature 001 in the same engine. URLs bound for the system browser are recorded instead of opened, so a run never launches a browser: `mailto:` (AC-7), a page outside Deezer that must leave and bring the window back (AC-9), a popup on the fixture's origin that must open inside the app and answer its `window.opener`, and a popup elsewhere that must go to the browser (AC-8).
+- WebKitGTK and WKWebView open a popup only within a user gesture. On Linux the page arms the URL and `xdotool` clicks the window (a real X event, under Xvfb); WebView2 opens a scripted `window.open`; the macOS runner cannot produce a gesture, so the popup steps are skipped there.
+- `DEEZER_TAURI_E2E_SMOKE=1` with `https://www.deezer.com/` as the URL is the smoke mode: no fixture capability is added, so the page reaches Rust only through `deezer-remote`, and the driver checks that the page title names Deezer, that at least one snapshot arrived (`Player::reports`) and that the window is still on `deezer.com`. `make smoke` and `.github/workflows/smoke.yml` run it; it is `#[ignore]` in `make check` because it needs the network.
 
 ## Security
 

@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Fixture player</title>
+  <style>html, body { height: 100%; margin: 0; }</style>
 </head>
 <body>
   <p>A page that uses the Media Session API the way the Deezer web player does.</p>
@@ -29,6 +30,22 @@
         });
         session.setActionHandler('previoustrack', index > 0 ? function () { load(index - 1); } : null);
       }
+
+      // A sign-in popup proves it kept its opener by writing back to this page.
+      window.addEventListener('message', function (event) {
+        if (event.data === 'popup-ready') {
+          session.metadata = new MediaMetadata({ title: 'Popup Opened', artist: 'Fixture Artist' });
+        }
+      });
+
+      // The harness arms a URL and clicks the page, so the popup opens within a user gesture.
+      document.addEventListener('click', function () {
+        if (window.__nextPopup) {
+          var target = window.__nextPopup;
+          window.__nextPopup = null;
+          window.open(target, '_blank');
+        }
+      });
 
       session.playbackState = 'paused';
       session.setActionHandler('play', function () { session.playbackState = 'playing'; });

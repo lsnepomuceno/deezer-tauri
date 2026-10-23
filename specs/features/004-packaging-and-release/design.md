@@ -29,7 +29,7 @@ The draft is created once, in `verify`, and its id goes to every build job. With
 
 ## Icons
 
-`assets/icon.svg` (1024 × 1024): a rounded square with a purple gradient (`#a238ff` to `#5b12b8`, the palette listeners associate with Deezer) and a white play symbol with sound arcs; the shape is the project's own, not Deezer's logo. `make icons` renders it to a 1024 px PNG with `@resvg/resvg-js` (`scripts/render-icons.mjs`), runs `tauri icon`, which writes the PNG, ICO and ICNS sizes, and removes the Android and iOS sets `tauri icon` also writes. A separate monochrome `assets/tray-template.svg` gives the macOS template tray icon and is rendered to `src-tauri/icons/tray-template.png`.
+`assets/icon.svg` (1024 × 1024): a rounded square with a purple gradient (`#a238ff` to `#5b12b8`, the palette listeners associate with Deezer) and a white play symbol with sound arcs; the shape is the project's own, not Deezer's logo. `make icons` renders it to a 1024 px PNG with `@resvg/resvg-js` (`scripts/render-icons.mjs`), runs `tauri icon`, which writes the PNG, ICO and ICNS sizes, and removes the Android and iOS sets `tauri icon` also writes. GNOME matches a window to its launcher by `StartupWMClass=deezer-tauri` in the package's desktop entry, so a binary run straight from `target/` shows a generic icon in the dock while the installed app shows its own; verified on 2026-10-23 on GNOME (Ubuntu 24.04) with the desktop entry, icons and binary of the released `.deb`, which was built on Ubuntu 22.04. A separate monochrome `assets/tray-template.svg` gives the macOS template tray icon and is rendered to `src-tauri/icons/tray-template.png`.
 
 ## Security
 

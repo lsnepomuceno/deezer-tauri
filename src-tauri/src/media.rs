@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde::Deserialize;
@@ -214,6 +215,7 @@ type Listener = Box<dyn Fn(&MediaInfo, Change) + Send + Sync>;
 pub struct Player {
     state: Mutex<MediaInfo>,
     listeners: Mutex<Vec<Arc<Listener>>>,
+    reports: AtomicUsize,
 }
 
 impl Player {
@@ -225,7 +227,13 @@ impl Player {
         lock(&self.listeners).push(Arc::new(Box::new(listener)));
     }
 
+    /// How many snapshots the page has sent, changed or not.
+    pub fn reports(&self) -> usize {
+        self.reports.load(Ordering::SeqCst)
+    }
+
     pub fn update(&self, next: MediaInfo) -> Change {
+        self.reports.fetch_add(1, Ordering::SeqCst);
         let change = {
             let mut state = lock(&self.state);
             let change = Change::between(&state, &next);
@@ -251,7 +259,6 @@ fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
 
     fn snapshot(title: &str, state: &str, actions: &[&str]) -> MediaSnapshot {
         MediaSnapshot {
@@ -432,6 +439,7 @@ mod tests {
         );
 
         assert_eq!(calls.load(Ordering::SeqCst), 3);
+        assert_eq!(player.reports(), 4);
         assert_eq!(player.current().title, "Two");
     }
 

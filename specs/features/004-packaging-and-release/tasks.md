@@ -7,4 +7,5 @@ Work in order. Each task is small, testable and linked to the acceptance criteri
 - [x] **T3** · `ci.yml` · covers AC-5 · test: the first run after publishing is green on the three platforms
 - [x] **T4** · `scripts/changelog-section.sh` and `release.yml` · covers AC-6 · test: the script against `CHANGELOG.md` locally; the first tag produces a draft release with the installers
 - [x] **T5** · `dependabot.yml` · covers AC-8 · test: GitHub accepts the file (Insights, Dependency graph, Dependabot)
-- [x] **T6** · Update the specs if anything changed during implementation; `make check`
+- [x] **T6** · `smoke.yml` and `make smoke` · covers AC-9 · test: green on the three platforms
+- [x] **T7** · Update the specs if anything changed during implementation; `make check`

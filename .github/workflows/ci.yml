@@ -36,7 +36,7 @@ jobs:
       - name: Linux system packages
         if: runner.os == 'Linux'
         timeout-minutes: 25
-        run: scripts/ci-linux-packages.sh xvfb
+        run: scripts/ci-linux-packages.sh xvfb xdotool
 
       - uses: dtolnay/rust-toolchain@stable
         with:

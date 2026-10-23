@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-23
+
+### Fixed
+
+- Sign-in popups (Google, Facebook, Apple) open at a usable size and close by themselves once the sign-in answers. On Linux, Deezer's Google sign-in opened in a window of about 200 × 200 pixels that stayed open, empty, after signing in.
+- The player's media bridge no longer runs inside sign-in popups.
+
 ## [0.1.0] - 2026-10-22
 
 First release.
@@ -22,5 +29,6 @@ First release.
 - Media keys and the system's media controls through the engine's own integration (MPRIS on Linux).
 - Installers: `.deb`, `.rpm` and AppImage on Linux, NSIS and MSI on Windows, `.dmg` for Apple Silicon and Intel on macOS.
 
-[Unreleased]: https://github.com/lsnepomuceno/deezer-tauri/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lsnepomuceno/deezer-tauri/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/lsnepomuceno/deezer-tauri/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/lsnepomuceno/deezer-tauri/releases/tag/v0.1.0

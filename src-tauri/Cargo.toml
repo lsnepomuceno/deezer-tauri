@@ -1,6 +1,6 @@
 [package]
 name = "deezer-tauri"
-version = "0.1.0"
+version = "0.1.1"
 description = "Unofficial desktop shell for the Deezer web player"
 authors = ["Lucas Nepomuceno"]
 license = "MIT"

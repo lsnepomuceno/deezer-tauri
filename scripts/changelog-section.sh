@@ -9,8 +9,9 @@ changelog="${2:-CHANGELOG.md}"
 section=$(awk -v heading="## [$version]" '
   index($0, heading) == 1 { found = 1; next }
   found && /^## \[/ { exit }
+  found && /^\[[^]]+\]: / { exit }
   found { print }
-' "$changelog" | sed -e '/./,$!d')
+' "$changelog" | sed -e '/./,$!d' -e :a -e '/^\n*$/{$d;N;ba' -e '}')
 
 if [ -z "$section" ]; then
   echo "CHANGELOG.md has no section for $version" >&2

@@ -39,6 +39,14 @@
         }
       });
 
+      // A three-step sign-in hands its result back once it is done.
+      window.addEventListener('message', function (event) {
+        if (typeof event.data === 'string' && event.data.indexOf('signed-in ') === 0) {
+          window.__signIn = event.source;
+          session.metadata = new MediaMetadata({ title: 'Signed In ' + event.data.slice(10), artist: 'Fixture Artist' });
+        }
+      });
+
       // The harness arms a URL and clicks the page, so the popup opens within a user gesture.
       document.addEventListener('click', function () {
         if (window.__nextPopup) {

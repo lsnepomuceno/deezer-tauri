@@ -332,6 +332,23 @@ impl<'a, R: Runtime> Driver<'a, R> {
                         |answer| answer["closed"] == true,
                     )
                 },
+                // A sign-in with three factors: three pages in the same popup, then the
+                // result to the opener and window.close(), as an OAuth provider does.
+                |d| d.open_popup("/signin.html"),
+                |d| {
+                    d.media(
+                        "a three-step sign-in in a popup hands its result back",
+                        |info| info.title == "Signed In password,email,phone",
+                    )
+                },
+                |d| {
+                    d.ask(
+                        "the sign-in popup closes once it has answered",
+                        "document.title = 'E2E:SIGNIN ' + JSON.stringify({ closed: !!(window.__signIn && window.__signIn.closed) });",
+                        "SIGNIN",
+                        |answer| answer["closed"] == true,
+                    )
+                },
                 |d| d.open_popup("https://example.org/popup"),
                 |d| {
                     d.external(

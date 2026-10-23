@@ -43,4 +43,4 @@ The player already publishes all of it through the Media Session API (`docs/arch
 
 ## Open questions
 
-- Whether WKWebView publishes the player's session to macOS Now Playing for a non-Safari app. It does not affect this feature (the tray works either way), only what the README can promise on macOS.
+- Decided on 2026-10-23: whether WKWebView publishes the player's session to macOS Now Playing for a non-Safari app is left unverified, since it needs a Mac with an account playing. It does not affect this feature (the tray works either way), and the README promises only what WebView2 and WKWebView provide on Windows and macOS.

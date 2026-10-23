@@ -18,6 +18,11 @@ if attempt; then
 fi
 
 echo "The default mirror failed; retrying on archive.ubuntu.com" >&2
+# GitHub's runners list their mirrors in apt-mirrors.txt (a mirror+file: source), not in
+# sources.list: that file has to be rewritten too, or the retry goes back to Azure.
+if [ -f /etc/apt/apt-mirrors.txt ]; then
+  echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+fi
 for list in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
   [ -f "$list" ] && sudo sed -i 's|http://azure.archive.ubuntu.com|http://archive.ubuntu.com|g' "$list"
 done

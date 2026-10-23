@@ -106,6 +106,15 @@ test('002 AC-1: installs once and a second run changes nothing', () => {
   assert.equal(bridge.version, 1);
 });
 
+test('002 AC-1: a popup does not get the bridge', () => {
+  const clock = new Clock();
+  const win = { navigator: { mediaSession: new MediaSession() }, setTimeout: clock.setTimeout, setInterval: clock.setInterval, opener: {} };
+  win.window = win;
+  vm.runInContext(source, vm.createContext(win));
+  assert.equal(win.__deezerTauri, undefined);
+  assert.equal(Object.hasOwn(win.navigator.mediaSession, 'setActionHandler'), false);
+});
+
 test('002 AC-1: the bridge cannot be replaced or extended by the page', () => {
   const { win } = setup();
   const bridge = win.__deezerTauri;

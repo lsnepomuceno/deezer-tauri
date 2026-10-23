@@ -3,7 +3,8 @@
 (function (win) {
   'use strict';
 
-  if (win.__deezerTauri) {
+  // Popups (sign-in providers) get the main window's scripts on Linux; not the player.
+  if (win.__deezerTauri || win.opener) {
     return;
   }
 

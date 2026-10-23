@@ -1,8 +1,8 @@
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
-use tauri::webview::{NewWindowResponse, PageLoadEvent};
+use tauri::webview::{NewWindowFeatures, NewWindowResponse, PageLoadEvent};
 use tauri::{
     AppHandle, Manager, Runtime, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent,
 };
@@ -157,6 +157,9 @@ fn build_main_window<R: Runtime>(
         .min_inner_size(480.0, 600.0)
         .center()
         .initialization_script(bridge::SCRIPT)
+        // WebKitGTK gives a popup its opener's scripts, not its own: the close handling
+        // has to be registered here too, and only acts in pages with an opener.
+        .initialization_script(navigation::POPUP_SCRIPT)
         .on_navigation(move |url| match frame_policy.frame_navigation(url) {
             FrameDecision::Allow => true,
             FrameDecision::OpenExternally => {
@@ -168,8 +171,17 @@ fn build_main_window<R: Runtime>(
                 false
             }
         })
-        .on_new_window(move |url, _features| match popup_policy.new_window(&url) {
-            PopupDecision::OpenInApp => NewWindowResponse::Allow,
+        .on_new_window(move |url, features| match popup_policy.new_window(&url) {
+            PopupDecision::OpenInApp => match open_popup(&popup_app, features) {
+                Ok(window) => NewWindowResponse::Create { window },
+                Err(error) => {
+                    log::warn!(
+                        "could not open a popup for {}: {error}",
+                        navigation::describe(&url)
+                    );
+                    NewWindowResponse::Deny
+                }
+            },
             PopupDecision::OpenExternally => {
                 open_externally(&popup_app, &url);
                 NewWindowResponse::Deny
@@ -209,6 +221,47 @@ fn build_main_window<R: Runtime>(
         .on_document_title_changed(|_, title| crate::e2e::record_title(&title));
 
     builder.build()
+}
+
+const POPUP_SIZE: (f64, f64) = (500.0, 650.0);
+
+/// A popup the page opened on an allowed origin, such as a sign-in provider's (001 AC-8,
+/// AC-11). The engine loads the URL into it; `window_features` relates it to the opener.
+fn open_popup<R: Runtime>(
+    app: &AppHandle<R>,
+    features: NewWindowFeatures,
+) -> tauri::Result<WebviewWindow<R>> {
+    static NEXT_POPUP: AtomicUsize = AtomicUsize::new(1);
+    let label = format!("popup-{}", NEXT_POPUP.fetch_add(1, Ordering::SeqCst));
+    let closing_app = app.clone();
+    let closing_label = label.clone();
+    WebviewWindowBuilder::new(
+        app,
+        label,
+        WebviewUrl::External("about:blank".parse().expect("about:blank parses")),
+    )
+    .title(PRODUCT_NAME)
+    .inner_size(POPUP_SIZE.0, POPUP_SIZE.1)
+    .center()
+    .window_features(features)
+    .initialization_script(navigation::POPUP_SCRIPT)
+    .on_navigation(move |url| {
+        if !navigation::is_close_request(url) {
+            return true;
+        }
+        if let Some(popup) = closing_app.get_webview_window(&closing_label) {
+            if let Err(error) = popup.close() {
+                log::warn!("could not close the popup: {error}");
+            }
+        }
+        false
+    })
+    .on_document_title_changed(|popup, title| {
+        if let Err(error) = popup.set_title(&title) {
+            log::warn!("could not set the popup title: {error}");
+        }
+    })
+    .build()
 }
 
 fn watch_close<R: Runtime>(app: &AppHandle<R>, window: &WebviewWindow<R>) {

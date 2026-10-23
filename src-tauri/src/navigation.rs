@@ -2,6 +2,18 @@ use url::Url;
 
 pub const START_URL: &str = "https://www.deezer.com/";
 
+/// Where a popup's `window.close()` is sent, so the shell can close its window (001 AC-11).
+/// `.invalid` never resolves, so the navigation can only end in the shell's hands.
+pub const CLOSE_REQUEST_URL: &str = "https://deezer-tauri.invalid/close";
+
+/// Injected into popups: the engines disagree on `window.close()` for a webview the app
+/// created, so it becomes a navigation the popup's hook understands.
+pub const POPUP_SCRIPT: &str = r#"(function () {
+  if (!window.opener) { return; }
+  var request = function () { window.location.href = "https://deezer-tauri.invalid/close"; };
+  try { window.close = request; } catch (error) {}
+})();"#;
+
 const APP_DOMAINS: &[&str] = &["deezer.com"];
 
 const SIGN_IN_HOSTS: &[&str] = &[
@@ -110,6 +122,12 @@ fn on_domain(host: &str, domain: &str) -> bool {
         || host
             .strip_suffix(domain)
             .is_some_and(|prefix| prefix.ends_with('.'))
+}
+
+pub fn is_close_request(url: &Url) -> bool {
+    url.scheme() == "https"
+        && url.host_str() == Some("deezer-tauri.invalid")
+        && url.path() == "/close"
 }
 
 /// Scheme and host only: paths and queries of login flows can carry tokens.
@@ -305,6 +323,31 @@ mod tests {
             policy.classify(&url("http://127.0.0.1:4001/")),
             Destination::Browser
         );
+    }
+
+    #[test]
+    fn ac_001_11_only_the_close_request_url_closes_a_popup() {
+        assert!(is_close_request(&url(CLOSE_REQUEST_URL)));
+        assert!(is_close_request(&url(
+            "https://deezer-tauri.invalid/close?x=1"
+        )));
+        for raw in [
+            "http://deezer-tauri.invalid/close",
+            "https://deezer-tauri.invalid/",
+            "https://deezer-tauri.invalid/closed",
+            "https://evil.com/close",
+            "https://deezer-tauri.invalid.evil.com/close",
+            "https://accounts.google.com/close",
+        ] {
+            assert!(!is_close_request(&url(raw)), "{raw}");
+        }
+    }
+
+    #[test]
+    fn ac_001_11_the_popup_script_sends_close_to_the_close_request_url() {
+        assert!(POPUP_SCRIPT.contains(&format!("\"{CLOSE_REQUEST_URL}\"")));
+        assert!(POPUP_SCRIPT.contains("window.close = request"));
+        assert!(POPUP_SCRIPT.contains("if (!window.opener) { return; }"));
     }
 
     #[test]

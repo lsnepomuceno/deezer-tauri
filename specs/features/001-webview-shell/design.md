@@ -24,7 +24,15 @@ user_agent::for_platform(Platform) -> Option<&'static str>                      
 | `on_new_window` | n/a (popups) | in-app for `App` and `SignIn`, system browser for `Browser` (AC-8) |
 | `on_page_load` (Started) | main frame only | a `Browser` URL leaves to the system browser and the window returns to the last `App` URL (AC-9) |
 
-`NewWindowResponse::Allow` uses wry's default popup: on Linux a webview created with `with_related_view` of the caller, on Windows the same environment, on macOS the same configuration, which is what keeps the session and `window.opener` for OAuth popups.
+Popups are created by the shell (`NewWindowResponse::Create`) with `window_features`, which gives them the opener's context (on Linux a webview related to the caller, on Windows the same environment, on macOS the same configuration: that is what keeps the session and `window.opener` for OAuth popups) and the size and position the page asked for. `NewWindowResponse::Allow` did that too, but on Linux wry's default window has no size: Deezer's Google sign-in opened in a window of about 200 × 200 pixels (found on 2026-10-23 by clicking the real button under Xvfb), and `window.close()` left it empty.
+
+| Popup | Value |
+| --- | --- |
+| label | `popup-N`, a counter |
+| size | the page's `width` and `height`, else 500 × 650 |
+| title | the page's title, as it changes |
+| initialization script | `window.close = () => location.href = "https://deezer-tauri.invalid/close"`, only in a page with a `window.opener`; registered on the popup and on the main window too, because on WebKitGTK a related webview runs its opener's scripts instead of its own (found when `window.close` stayed native in the popup) |
+| navigation hook | `navigation::is_close_request` closes the window and refuses the navigation; every other URL is allowed (the provider's pages are its own business) |
 
 ## Data on disk
 

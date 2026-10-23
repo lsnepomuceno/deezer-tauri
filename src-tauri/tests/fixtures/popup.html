@@ -10,6 +10,12 @@
     if (window.opener) {
       window.opener.postMessage('popup-ready', '*');
     }
+    // A sign-in popup closes itself once it has answered; the harness says when.
+    window.addEventListener('message', function (event) {
+      if (event.data === 'close') {
+        window.close();
+      }
+    });
   </script>
 </body>
 </html>

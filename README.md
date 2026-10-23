@@ -71,7 +71,7 @@ You need [Rust](https://rustup.rs) (stable), Node 20 or newer, and on Linux:
 # Debian and Ubuntu
 sudo apt install libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev \
   gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav \
-  patchelf xvfb   # patchelf for the AppImage, xvfb to keep the end-to-end window off screen
+  patchelf xvfb xdotool   # AppImage, and the end-to-end test: an off-screen display and a real click
 ```
 
 Windows needs the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and macOS the Xcode command line tools, as for any [Tauri app](https://v2.tauri.app/start/prerequisites/).
@@ -80,6 +80,7 @@ Windows needs the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com
 make deps      # Node tools: the Tauri CLI and the icon renderer
 make run       # the app in development
 make check     # formatting, Clippy, bridge, unit, IPC and end-to-end tests
+make smoke     # Deezer itself in your engine (needs the network)
 make bundle    # the installers for your platform, in src-tauri/target/release/bundle
 make help      # every target
 ```

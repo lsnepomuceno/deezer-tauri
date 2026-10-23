@@ -23,7 +23,7 @@ make check     # everything CI runs: formatting, Clippy, bridge, unit, IPC and e
 make bundle    # the installers for your platform
 ```
 
-On Linux, `make e2e` uses `xvfb-run` when it is installed, so the test window stays off your desktop.
+On Linux, `make e2e` uses `xvfb-run` when it is installed, so the test window stays off your desktop, and `xdotool` to click the page for the popup steps. `make smoke` loads Deezer itself and needs the network.
 
 ## Pull requests
 

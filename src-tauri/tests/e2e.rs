@@ -1,5 +1,7 @@
 //! 002 AC-12: the real binary, in the platform's real engine, against a local page that
-//! behaves like the player. Run with `cargo test --features e2e --test e2e`.
+//! behaves like the player, plus 001 AC-7 to AC-9 in that engine. Run with
+//! `cargo test --features e2e --test e2e`. The smoke test against deezer.com needs the
+//! network and is ignored unless asked for: `--ignored smoke`.
 #![cfg(feature = "e2e")]
 
 use std::io::{Read, Write};
@@ -8,7 +10,8 @@ use std::process::Command;
 use std::thread;
 use std::time::{Duration, Instant};
 
-const PAGE: &str = include_str!("fixtures/player.html");
+const PLAYER: &str = include_str!("fixtures/player.html");
+const POPUP: &str = include_str!("fixtures/popup.html");
 
 fn serve_fixture() -> u16 {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -18,9 +21,11 @@ fn serve_fixture() -> u16 {
             let Ok(mut stream) = stream else { continue };
             let mut request = [0_u8; 4096];
             let read = stream.read(&mut request).unwrap_or(0);
-            let found = request[..read].starts_with(b"GET /player.html ");
-            let (status, body) = if found {
-                ("200 OK", PAGE)
+            let request = &request[..read];
+            let (status, body) = if request.starts_with(b"GET /player.html ") {
+                ("200 OK", PLAYER)
+            } else if request.starts_with(b"GET /popup.html ") {
+                ("200 OK", POPUP)
             } else {
                 ("404 Not Found", "")
             };
@@ -34,23 +39,27 @@ fn serve_fixture() -> u16 {
     port
 }
 
-#[test]
-fn ac_002_12_the_real_engine_reports_to_and_obeys_the_shell() {
-    let port = serve_fixture();
+struct Run {
+    status: std::process::ExitStatus,
+    report: String,
+    steps: Vec<serde_json::Value>,
+}
+
+fn run_app(url: &str, smoke: bool) -> Run {
     let dir = tempfile::tempdir().unwrap();
     let settings = dir.path().join("settings.json");
     let report = dir.path().join("report.json");
     std::fs::write(&settings, r#"{"notifications": false}"#).unwrap();
 
-    let mut child = Command::new(env!("CARGO_BIN_EXE_deezer-tauri"))
-        .env(
-            "DEEZER_TAURI_E2E_URL",
-            format!("http://127.0.0.1:{port}/player.html"),
-        )
+    let mut command = Command::new(env!("CARGO_BIN_EXE_deezer-tauri"));
+    command
+        .env("DEEZER_TAURI_E2E_URL", url)
         .env("DEEZER_TAURI_E2E_SETTINGS", &settings)
-        .env("DEEZER_TAURI_E2E_REPORT", &report)
-        .spawn()
-        .unwrap();
+        .env("DEEZER_TAURI_E2E_REPORT", &report);
+    if smoke {
+        command.env("DEEZER_TAURI_E2E_SMOKE", "1");
+    }
+    let mut child = command.spawn().unwrap();
 
     let deadline = Instant::now() + Duration::from_secs(120);
     let status = loop {
@@ -59,15 +68,80 @@ fn ac_002_12_the_real_engine_reports_to_and_obeys_the_shell() {
         }
         if Instant::now() > deadline {
             let _ = child.kill();
-            panic!("the app did not finish the end-to-end run in 120 s");
+            panic!("the app did not finish the run in 120 s");
         }
         thread::sleep(Duration::from_millis(200));
     };
 
-    let raw = std::fs::read_to_string(&report)
+    let report = std::fs::read_to_string(&report)
         .unwrap_or_else(|_| panic!("the app exited with {status} and wrote no report"));
-    let steps: Vec<serde_json::Value> = serde_json::from_str(&raw).unwrap();
-    assert!(status.success(), "end-to-end run failed ({status}):\n{raw}");
-    assert_eq!(steps.len(), 14, "unexpected number of steps:\n{raw}");
-    assert!(steps.iter().all(|step| step["ok"] == true), "{raw}");
+    let steps = serde_json::from_str(&report).unwrap();
+    Run {
+        status,
+        report,
+        steps,
+    }
+}
+
+fn names(steps: &[serde_json::Value]) -> Vec<&str> {
+    steps
+        .iter()
+        .filter_map(|step| step["name"].as_str())
+        .collect()
+}
+
+#[test]
+fn ac_002_12_the_real_engine_reports_to_and_obeys_the_shell() {
+    let port = serve_fixture();
+    let run = run_app(&format!("http://127.0.0.1:{port}/player.html"), false);
+    let Run {
+        status,
+        report,
+        steps,
+    } = run;
+    assert!(
+        status.success(),
+        "end-to-end run failed ({status}):\n{report}"
+    );
+    assert!(steps.iter().all(|step| step["ok"] == true), "{report}");
+
+    let names = names(&steps);
+    for expected in [
+        "the fixture's snapshot reaches Rust",
+        "the tray offers to hide it again",
+        "mailto opens in the system handler",
+        "a page outside Deezer opens in the browser",
+        "the window returns to the player",
+    ] {
+        assert!(
+            names.contains(&expected),
+            "missing step {expected:?}:\n{report}"
+        );
+    }
+    if cfg!(any(target_os = "linux", target_os = "windows")) {
+        for expected in [
+            "a popup on an app origin opens in the app, with its opener",
+            "a popup outside Deezer opens in the browser",
+        ] {
+            assert!(
+                names.contains(&expected),
+                "missing step {expected:?}:\n{report}"
+            );
+        }
+    }
+}
+
+/// Deezer itself in the platform's engine: the page loads and the bridge reports
+/// through the production capability. Needs the network; run with `--ignored smoke`.
+#[test]
+#[ignore]
+fn smoke_deezer_com_loads_and_reports_in_this_engine() {
+    let Run {
+        status,
+        report,
+        steps,
+    } = run_app("https://www.deezer.com/", true);
+    println!("{report}");
+    assert!(status.success(), "smoke run failed ({status}):\n{report}");
+    assert_eq!(steps.len(), 3, "{report}");
 }

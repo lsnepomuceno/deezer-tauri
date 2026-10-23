@@ -1,0 +1,49 @@
+name: Smoke
+
+# Deezer itself, in each platform's engine: the page loads, the bridge reports through
+# the production capability, and the window stays on Deezer (specs/features/004 AC-9).
+# Separate from CI because it depends on the network and on deezer.com being up.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src-tauri/**'
+      - '.github/workflows/smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-22.04, windows-latest, macos-latest ]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Linux system packages
+        if: runner.os == 'Linux'
+        timeout-minutes: 25
+        run: scripts/ci-linux-packages.sh xvfb
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Deezer in the engine
+        if: runner.os == 'Linux'
+        run: xvfb-run -a cargo test --manifest-path src-tauri/Cargo.toml --features e2e --test e2e -- --ignored smoke --nocapture
+
+      - name: Deezer in the engine
+        if: runner.os != 'Linux'
+        run: cargo test --manifest-path src-tauri/Cargo.toml --features e2e --test e2e -- --ignored smoke --nocapture

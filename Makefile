@@ -8,7 +8,7 @@ MANIFEST := --manifest-path src-tauri/Cargo.toml
 XVFB := $(shell command -v xvfb-run >/dev/null 2>&1 && echo "xvfb-run -a")
 
 .DEFAULT_GOAL := help
-.PHONY: help deps run test test-bridge test-rust e2e fmt lint check bundle icons clean
+.PHONY: help deps run test test-bridge test-rust e2e smoke fmt lint check bundle icons clean
 
 help: ## list the targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -29,6 +29,9 @@ test-rust: ## unit, IPC and capability tests
 
 e2e: ## the real binary in the real engine, against the fixture page
 	$(XVFB) $(CARGO) test $(MANIFEST) --features e2e --test e2e
+
+smoke: ## Deezer itself in this engine: loads, and the bridge reports (needs the network)
+	$(XVFB) $(CARGO) test $(MANIFEST) --features e2e --test e2e -- --ignored smoke --nocapture
 
 fmt: ## format the Rust code
 	$(CARGO) fmt $(MANIFEST)

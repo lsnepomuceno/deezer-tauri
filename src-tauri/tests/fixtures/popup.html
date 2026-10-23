@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Fixture sign-in popup</title>
+</head>
+<body>
+  <p>Stands in for a login provider's popup: it answers its opener, as OAuth popups do.</p>
+  <script>
+    if (window.opener) {
+      window.opener.postMessage('popup-ready', '*');
+    }
+  </script>
+</body>
+</html>

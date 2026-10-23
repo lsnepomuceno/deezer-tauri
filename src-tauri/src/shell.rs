@@ -204,7 +204,9 @@ fn build_main_window<R: Runtime>(
         None => builder,
     };
     #[cfg(feature = "e2e")]
-    let builder = builder.incognito(true);
+    let builder = builder
+        .incognito(true)
+        .on_document_title_changed(|_, title| crate::e2e::record_title(&title));
 
     builder.build()
 }
@@ -333,6 +335,10 @@ fn refresh_tray<R: Runtime>(app: &AppHandle<R>) {
 }
 
 fn open_externally<R: Runtime>(app: &AppHandle<R>, url: &Url) {
+    #[cfg(feature = "e2e")]
+    if crate::e2e::intercept_external(url) {
+        return;
+    }
     if let Err(error) = app.opener().open_url(url.as_str(), None::<&str>) {
         log::warn!(
             "could not open {} in the system browser: {error}",

@@ -13,10 +13,10 @@ The architecture lives in [`../docs/architecture.md`](../docs/architecture.md) a
 
 | Feature | Status |
 | --- | --- |
-| [`001-webview-shell`](features/001-webview-shell/requirements.md) | in progress |
-| [`002-media-bridge`](features/002-media-bridge/requirements.md) | in progress |
-| [`003-tray-and-notifications`](features/003-tray-and-notifications/requirements.md) | in progress |
-| [`004-packaging-and-release`](features/004-packaging-and-release/requirements.md) | in progress |
+| [`001-webview-shell`](features/001-webview-shell/requirements.md) | done |
+| [`002-media-bridge`](features/002-media-bridge/requirements.md) | done |
+| [`003-tray-and-notifications`](features/003-tray-and-notifications/requirements.md) | done |
+| [`004-packaging-and-release`](features/004-packaging-and-release/requirements.md) | done |
 
 ## Conventions
 

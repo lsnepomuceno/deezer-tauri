@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Fixture sign-in</title>
+</head>
+<body>
+  <p>Stands in for a sign-in provider with three factors: a password, a code sent by
+  e-mail and a confirmation on the phone. Each step is its own page in the popup.</p>
+  <script>
+    (function () {
+      var steps = ['password', 'email', 'phone'];
+      var step = new URLSearchParams(location.search).get('step') || steps[0];
+      var index = steps.indexOf(step);
+      document.title = 'Sign-in: ' + step;
+
+      var button = document.createElement('button');
+      button.textContent = 'Continue';
+      button.addEventListener('click', function () {
+        if (index < steps.length - 1) {
+          location.href = '?step=' + steps[index + 1];
+          return;
+        }
+        // Like an OAuth popup: hand the result to the opener, then close.
+        window.opener.postMessage('signed-in ' + steps.join(','), '*');
+        window.close();
+      });
+      document.body.appendChild(button);
+
+      // Where a person would type and confirm, the fixture clicks for them.
+      setTimeout(function () { button.click(); }, 300);
+    })();
+  </script>
+</body>
+</html>

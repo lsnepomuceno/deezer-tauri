@@ -12,6 +12,7 @@ use std::time::{Duration, Instant};
 
 const PLAYER: &str = include_str!("fixtures/player.html");
 const POPUP: &str = include_str!("fixtures/popup.html");
+const SIGN_IN: &str = include_str!("fixtures/signin.html");
 
 fn serve_fixture() -> u16 {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -21,13 +22,17 @@ fn serve_fixture() -> u16 {
             let Ok(mut stream) = stream else { continue };
             let mut request = [0_u8; 4096];
             let read = stream.read(&mut request).unwrap_or(0);
-            let request = &request[..read];
-            let (status, body) = if request.starts_with(b"GET /player.html ") {
-                ("200 OK", PLAYER)
-            } else if request.starts_with(b"GET /popup.html ") {
-                ("200 OK", POPUP)
-            } else {
-                ("404 Not Found", "")
+            let request = String::from_utf8_lossy(&request[..read]);
+            // The path without its query: the sign-in steps are `signin.html?step=…`.
+            let path = request
+                .strip_prefix("GET ")
+                .and_then(|rest| rest.split([' ', '?']).next())
+                .unwrap_or_default();
+            let (status, body) = match path {
+                "/player.html" => ("200 OK", PLAYER),
+                "/popup.html" => ("200 OK", POPUP),
+                "/signin.html" => ("200 OK", SIGN_IN),
+                _ => ("404 Not Found", ""),
             };
             let _ = write!(
                 stream,
@@ -123,6 +128,8 @@ fn ac_002_12_the_real_engine_reports_to_and_obeys_the_shell() {
             "a popup on an app origin opens in the app, with its opener",
             "the popup has a usable size",
             "the popup's window.close() closes its window",
+            "a three-step sign-in in a popup hands its result back",
+            "the sign-in popup closes once it has answered",
             "a popup outside Deezer opens in the browser",
         ] {
             assert!(

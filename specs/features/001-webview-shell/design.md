@@ -24,9 +24,11 @@ user_agent::for_platform(Platform) -> Option<&'static str>                      
 | `on_new_window` | n/a (popups) | in-app for `App` and `SignIn`, system browser for `Browser` (AC-8) |
 | `on_page_load` (Started) | main frame only | a `Browser` URL leaves to the system browser and the window returns to the last `App` URL (AC-9) |
 
-Popups are created by the shell (`NewWindowResponse::Create`) with `window_features`, which gives them the opener's context (on Linux a webview related to the caller, on Windows the same environment, on macOS the same configuration: that is what keeps the session and `window.opener` for OAuth popups) and the size and position the page asked for. `NewWindowResponse::Allow` did that too, but on Linux wry's default window has no size: Deezer's Google sign-in opened in a window of about 200 × 200 pixels (found on 2026-10-23 by clicking the real button under Xvfb), and `window.close()` left it empty.
+On Linux and macOS, popups are created by the shell (`NewWindowResponse::Create`) with `window_features`, which gives them the opener's context (on Linux a webview related to the caller, on Windows the same environment, on macOS the same configuration: that is what keeps the session and `window.opener` for OAuth popups) and the size and position the page asked for. `NewWindowResponse::Allow` did that too, but on Linux wry's default window has no size: Deezer's Google sign-in opened in a window of about 200 × 200 pixels (found on 2026-10-23 by clicking the real button under Xvfb), and `window.close()` left it empty.
 
-| Popup | Value |
+On Windows the shell answers `NewWindowResponse::Allow`: WebView2's own popup window takes the size the page asks for and closes on `window.close()`, while a window created by the shell never appeared there (no popup at all in CI on 2026-10-23). The tests check popups from the page's side on every engine: the popup reports its size to its opener, and the opener reads `popup.closed`.
+
+| Popup (Linux, macOS) | Value |
 | --- | --- |
 | label | `popup-N`, a counter |
 | size | the page's `width` and `height`, else 500 × 650 |

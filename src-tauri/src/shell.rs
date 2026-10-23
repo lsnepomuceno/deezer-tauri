@@ -172,16 +172,25 @@ fn build_main_window<R: Runtime>(
             }
         })
         .on_new_window(move |url, features| match popup_policy.new_window(&url) {
-            PopupDecision::OpenInApp => match open_popup(&popup_app, features) {
-                Ok(window) => NewWindowResponse::Create { window },
-                Err(error) => {
-                    log::warn!(
-                        "could not open a popup for {}: {error}",
-                        navigation::describe(&url)
-                    );
-                    NewWindowResponse::Deny
+            PopupDecision::OpenInApp => {
+                #[cfg(feature = "e2e")]
+                crate::e2e::record_popup(&url);
+                // WebView2's own popup window takes the page's size and closes on
+                // window.close(); a window created here never showed up on WebView2.
+                if cfg!(windows) {
+                    return NewWindowResponse::Allow;
                 }
-            },
+                match open_popup(&popup_app, features) {
+                    Ok(window) => NewWindowResponse::Create { window },
+                    Err(error) => {
+                        log::warn!(
+                            "could not open a popup for {}: {error}",
+                            navigation::describe(&url)
+                        );
+                        NewWindowResponse::Deny
+                    }
+                }
+            }
             PopupDecision::OpenExternally => {
                 open_externally(&popup_app, &url);
                 NewWindowResponse::Deny

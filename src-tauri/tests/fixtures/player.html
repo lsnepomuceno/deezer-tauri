@@ -33,9 +33,9 @@
 
       // A sign-in popup proves it kept its opener by writing back to this page.
       window.addEventListener('message', function (event) {
-        if (event.data === 'popup-ready') {
+        if (typeof event.data === 'string' && event.data.indexOf('popup-ready ') === 0) {
           window.__popup = event.source;
-          session.metadata = new MediaMetadata({ title: 'Popup Opened', artist: 'Fixture Artist' });
+          session.metadata = new MediaMetadata({ title: 'Popup Opened ' + event.data.slice(12), artist: 'Fixture Artist' });
         }
       });
 

@@ -46,6 +46,8 @@ static EXTERNAL: Mutex<Vec<String>> = Mutex::new(Vec::new());
 /// Every title the main page had, in order: the page answers the smoke probes through
 /// its title, and Deezer may rename the page right after.
 static PAGE_TITLES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+/// URLs the shell decided to open in an app popup.
+static POPUPS: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
 fn active() -> bool {
     *ACTIVE.get_or_init(|| Config::from_env().is_some())
@@ -62,6 +64,12 @@ pub(crate) fn intercept_external(url: &Url) -> bool {
     }
     lock(&EXTERNAL).push(url.to_string());
     true
+}
+
+pub(crate) fn record_popup(url: &Url) {
+    if active() {
+        lock(&POPUPS).push(url.to_string());
+    }
 }
 
 pub(crate) fn record_title(title: &str) {
@@ -296,12 +304,28 @@ impl<'a, R: Runtime> Driver<'a, R> {
                 |d| {
                     d.media(
                         "a popup on an app origin opens in the app, with its opener",
-                        |info| info.title == "Popup Opened",
+                        |info| info.title.starts_with("Popup Opened "),
                     )
                 },
-                |d| d.popup_window("the popup is a window of its own, sized as asked", true),
+                // The popup reports its own size: 520 × 640 as asked, or 500 × 650 where
+                // the engine does not pass the request on (WebKitGTK).
+                |d| {
+                    d.media("the popup has a usable size", |info| {
+                        matches!(
+                            info.title.as_str(),
+                            "Popup Opened 520x640" | "Popup Opened 500x650"
+                        )
+                    })
+                },
                 |d| d.eval("window.__popup && window.__popup.postMessage('close', '*');"),
-                |d| d.popup_window("the popup's window.close() closes its window", false),
+                |d| {
+                    d.ask(
+                        "the popup's window.close() closes its window",
+                        "document.title = 'E2E:POPUP ' + JSON.stringify({ closed: !!(window.__popup && window.__popup.closed) });",
+                        "POPUP",
+                        |answer| answer["closed"] == true,
+                    )
+                },
                 |d| d.open_popup("https://example.org/popup"),
                 |d| {
                     d.external(
@@ -381,25 +405,28 @@ impl<'a, R: Runtime> Driver<'a, R> {
                 },
                 |d| d.press_google(),
                 |d| {
-                    let app = d.app;
                     d.wait("Google's sign-in opens in an app popup", || {
-                        let hosts: Vec<String> = popups(app)
-                            .iter()
-                            .filter_map(|window| window.url().ok())
-                            .filter_map(|url| url.host_str().map(str::to_owned))
-                            .collect();
-                        (
-                            hosts.iter().any(|host| host == "accounts.google.com"),
-                            format!("popup hosts: {hosts:?}"),
-                        )
+                        let opened = lock(&POPUPS).clone();
+                        let google = opened.iter().any(|url| {
+                            Url::parse(url)
+                                .ok()
+                                .is_some_and(|url| url.host_str() == Some("accounts.google.com"))
+                        });
+                        (google, format!("popups: {}", opened.len()))
                     })
                 },
-                |d| {
+            ]);
+        }
+        // The popup is the shell's window on Linux, where closing it is the shell's job;
+        // WebView2 closes its own popup windows.
+        if cfg!(target_os = "linux") {
+            script.extend([
+                (|d| {
                     for popup in popups(d.app) {
                         let _ = popup.eval("window.close();");
                     }
                     true
-                },
+                }) as fn(&mut Self) -> bool,
                 |d| {
                     let app = d.app;
                     d.wait("Google's popup closes like a sign-in popup does", || {
@@ -509,38 +536,6 @@ impl<'a, R: Runtime> Driver<'a, R> {
             }
         }
         self.steps
-    }
-
-    /// 001 AC-8 and AC-11: popups are windows labelled `popup-N`, sized as the page asked.
-    fn popup_window(&mut self, name: &'static str, expected: bool) -> bool {
-        let app = self.app;
-        self.wait(name, || {
-            let popups: Vec<String> = app
-                .webview_windows()
-                .into_iter()
-                .filter(|(label, _)| label.starts_with("popup-"))
-                .map(|(label, window)| {
-                    let size = window
-                        .inner_size()
-                        .ok()
-                        .zip(window.scale_factor().ok())
-                        .map(|(size, scale)| size.to_logical::<f64>(scale));
-                    let title = window.title().unwrap_or_default();
-                    match size {
-                        Some(size) => format!("{label} {}x{} {title:?}", size.width, size.height),
-                        None => label,
-                    }
-                })
-                .collect();
-            let ok = if expected {
-                popups
-                    .iter()
-                    .any(|popup| popup.contains(" 520x640 ") || popup.contains(" 500x650 "))
-            } else {
-                popups.is_empty()
-            };
-            (ok, format!("popups: {popups:?}"))
-        })
     }
 
     fn current_url(&self) -> Option<Url> {

@@ -1,7 +1,8 @@
 name: Smoke
 
 # Deezer itself, in each platform's engine: the page loads, the bridge reports through
-# the production capability, and the window stays on Deezer (specs/features/004 AC-9).
+# the production capability, a preview from Deezer's CDN plays, and the Google button of
+# Deezer's login opens Google in an app popup that closes itself (specs/features/004 AC-9).
 # Separate from CI because it depends on the network and on deezer.com being up.
 on:
   workflow_dispatch:
@@ -32,7 +33,7 @@ jobs:
       - name: Linux system packages
         if: runner.os == 'Linux'
         timeout-minutes: 25
-        run: scripts/ci-linux-packages.sh xvfb
+        run: scripts/ci-linux-packages.sh xvfb xdotool
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -42,7 +43,7 @@ jobs:
 
       - name: Deezer in the engine
         if: runner.os == 'Linux'
-        run: xvfb-run -a cargo test --manifest-path src-tauri/Cargo.toml --features e2e --test e2e -- --ignored smoke --nocapture
+        run: xvfb-run -a -s '-screen 0 1280x1024x24' cargo test --manifest-path src-tauri/Cargo.toml --features e2e --test e2e -- --ignored smoke --nocapture
 
       - name: Deezer in the engine
         if: runner.os != 'Linux'

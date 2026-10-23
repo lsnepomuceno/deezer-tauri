@@ -121,6 +121,8 @@ fn ac_002_12_the_real_engine_reports_to_and_obeys_the_shell() {
     if cfg!(any(target_os = "linux", target_os = "windows")) {
         for expected in [
             "a popup on an app origin opens in the app, with its opener",
+            "the popup has a usable size",
+            "the popup's window.close() closes its window",
             "a popup outside Deezer opens in the browser",
         ] {
             assert!(
@@ -131,8 +133,10 @@ fn ac_002_12_the_real_engine_reports_to_and_obeys_the_shell() {
     }
 }
 
-/// Deezer itself in the platform's engine: the page loads and the bridge reports
-/// through the production capability. Needs the network; run with `--ignored smoke`.
+/// Deezer itself in the platform's engine: the page loads, the bridge reports through
+/// the production capability, a preview from Deezer's CDN plays, and (Linux and Windows)
+/// the Google button of Deezer's login opens Google in an app popup that closes itself.
+/// Needs the network; run with `--ignored smoke`.
 #[test]
 #[ignore]
 fn smoke_deezer_com_loads_and_reports_in_this_engine() {
@@ -143,5 +147,26 @@ fn smoke_deezer_com_loads_and_reports_in_this_engine() {
     } = run_app("https://www.deezer.com/", true);
     println!("{report}");
     assert!(status.success(), "smoke run failed ({status}):\n{report}");
-    assert_eq!(steps.len(), 3, "{report}");
+    assert!(steps.iter().all(|step| step["ok"] == true), "{report}");
+
+    let names = names(&steps);
+    let mut expected = vec![
+        "deezer.com loads in the engine",
+        "the bridge reports from deezer.com through the production capability",
+        "the window is still on Deezer",
+        "a Deezer preview plays in the engine",
+    ];
+    if cfg!(any(target_os = "linux", target_os = "windows")) {
+        expected.extend([
+            "Deezer's login page loads",
+            "the login page shows the Google button",
+            "Google's sign-in opens in an app popup",
+        ]);
+    }
+    if cfg!(target_os = "linux") {
+        expected.push("Google's popup closes like a sign-in popup does");
+    }
+    for step in expected {
+        assert!(names.contains(&step), "missing step {step:?}:\n{report}");
+    }
 }

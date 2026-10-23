@@ -33,8 +33,9 @@
 
       // A sign-in popup proves it kept its opener by writing back to this page.
       window.addEventListener('message', function (event) {
-        if (event.data === 'popup-ready') {
-          session.metadata = new MediaMetadata({ title: 'Popup Opened', artist: 'Fixture Artist' });
+        if (typeof event.data === 'string' && event.data.indexOf('popup-ready ') === 0) {
+          window.__popup = event.source;
+          session.metadata = new MediaMetadata({ title: 'Popup Opened ' + event.data.slice(12), artist: 'Fixture Artist' });
         }
       });
 
@@ -43,7 +44,7 @@
         if (window.__nextPopup) {
           var target = window.__nextPopup;
           window.__nextPopup = null;
-          window.open(target, '_blank');
+          window.open(target, '_blank', 'width=520,height=640');
         }
       });
 

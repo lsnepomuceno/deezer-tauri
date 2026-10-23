@@ -30,8 +30,8 @@ test-rust: ## unit, IPC and capability tests
 e2e: ## the real binary in the real engine, against the fixture page
 	$(XVFB) $(CARGO) test $(MANIFEST) --features e2e --test e2e
 
-smoke: ## Deezer itself in this engine: loads, and the bridge reports (needs the network)
-	$(XVFB) $(CARGO) test $(MANIFEST) --features e2e --test e2e -- --ignored smoke --nocapture
+smoke: ## Deezer itself in this engine: page, bridge, a preview playing, Google sign-in popup (network)
+	$(XVFB) -s '-screen 0 1280x1024x24' $(CARGO) test $(MANIFEST) --features e2e --test e2e -- --ignored smoke --nocapture
 
 fmt: ## format the Rust code
 	$(CARGO) fmt $(MANIFEST)

@@ -8,8 +8,14 @@
   <p>Stands in for a login provider's popup: it answers its opener, as OAuth popups do.</p>
   <script>
     if (window.opener) {
-      window.opener.postMessage('popup-ready', '*');
+      window.opener.postMessage('popup-ready ' + window.innerWidth + 'x' + window.innerHeight, '*');
     }
+    // A sign-in popup closes itself once it has answered; the harness says when.
+    window.addEventListener('message', function (event) {
+      if (event.data === 'close') {
+        window.close();
+      }
+    });
   </script>
 </body>
 </html>

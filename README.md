@@ -80,7 +80,7 @@ Windows needs the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com
 make deps      # Node tools: the Tauri CLI and the icon renderer
 make run       # the app in development
 make check     # formatting, Clippy, bridge, unit, IPC and end-to-end tests
-make smoke     # Deezer itself in your engine (needs the network)
+make smoke     # Deezer itself in your engine: page, a preview playing, Google sign-in popup (needs the network)
 make bundle    # the installers for your platform, in src-tauri/target/release/bundle
 make help      # every target
 ```
